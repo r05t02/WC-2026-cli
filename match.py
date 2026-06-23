@@ -3,23 +3,7 @@ from zoneinfo import ZoneInfo
 import json
 import sys
 def main():
-
-    # READ DATA FROM LOCAL .JSON FILE
-    with open('matches.json','r') as f:
-        match_data = json.load(f)
-        matches = match_data["matches"]
-        # print(matches)
-        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-        convert_to_indian_format(matches)
-        for x in range(len(matches)):
-            print(matches[x])
-        
-        
-        
-
-        
- 
-    # #OR PULL DATA DIRECTLY FROM URL
+    ## PULL DATA DIRECTLY FROM URL
     # import requests
     # url = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
     # match_data = requests.get(url).json()
@@ -27,8 +11,26 @@ def main():
     # convert_to_indian_format(matches)
     
 
+    # READ DATA FROM LOCAL .JSON FILE
+    with open('matches.json','r') as f:
+        match_data = json.load(f)
+       
+        
+    matches = match_data["matches"]
 
+    print("------------------------------------------------------------------------------------------------------------------------------------------------------------------")
 
+    #Replaces UTC to IST in dates and time
+    convert_to_indian_format(matches)
+    
+    matches.sort(key=sort_matches)
+    
+    for match in matches:
+        print(match)
+   
+    # sorted_by_DateTime = sorted(matches, key=sort_matches)
+    # print(sorted_by_DateTime)
+    
 
 
 
@@ -69,16 +71,32 @@ def convert_to_indian_format(match_list):
 
     # return ist_time, ist_date
 
-            
-             
-            
+
+
+def sort_matches(match):
+     
+    #  for match in matches:
+    #     full_ist_date = match["date"]
+    #     full_ist_time = match["time"].replace(" IST", "")
+    #     return datetime.strptime(f"{full_ist_date} {full_ist_time}", "%d/%m/%Y %H:%M")
+     
+         
+    full_ist_date = match["date"]
+    full_ist_time = match["time"].replace(" IST", "")
+
+    match_date_and_time = f"{full_ist_date} {full_ist_time}"
+
+    dt_object = datetime.strptime(match_date_and_time, "%d/%m/%Y %H:%M")
+
+    return dt_object
 
 
 
+        
+          
 
-
-
-
+     
+                    
 if __name__ == "__main__":
     main()
 
