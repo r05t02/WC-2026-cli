@@ -1,14 +1,22 @@
+from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
+import json
+import sys
 def main():
-    import sys
-    import datetime
 
     # READ DATA FROM LOCAL .JSON FILE
-    import json
     with open('matches.json','r') as f:
         match_data = json.load(f)
         matches = match_data["matches"]
-        print(type(matches))
+        # print(matches)
+        print("------------------------------------------------------------------------------------------------------------------------------------------------------------------")
         convert_to_indian_format(matches)
+        for x in range(len(matches)):
+            print(matches[x])
+        
+        
+        
+
         
  
     # #OR PULL DATA DIRECTLY FROM URL
@@ -29,47 +37,41 @@ def main():
 def convert_to_indian_format(match_list):
 
     num_of_matches = len(match_list)
+    ist = ZoneInfo("Asia/Kolkata")
 
     for items in range(num_of_matches):
             # DATE EXTRACTION AND FORMAT FIXING
             match_date = match_list[items]["date"]
-            match_date = match_date.split("-")
-            year = match_date[0]
-            day = match_date[2]
-            month = match_date[1]
-
-            # CHANGING THE DATE FORMATS
-            match_list[items]["date"] = f"{day}/{month}/{year}"
-            fixed_date = match_list[items]["date"]
-
-
-            #EXTRACT TIME
             match_time = match_list[items]["time"]
-            exact_match_timings = match_date
+
+            #SPLIT THE MAIN PARTS REQUIRED FOR: UTC -> IST CONVERSION
+            time, utc = match_time.split(" ")
+            utc = utc.replace("UTC","")                 #Fixing UTC for datetime object conversion
+            utc = int(utc)                              #Fixing UTC for datetime object conversion              
+            match_datetime_str = match_date + " " + time
+
+            original_data_timezone = timezone(timedelta(hours=utc))   #Fixing UTC for datetime object conversion
+            match_dt_obj = datetime.strptime(match_datetime_str,"%Y-%m-%d %H:%M")    #converting Match date, time along with fixed UTC
+
+            match_dt_obj = match_dt_obj.replace(tzinfo=original_data_timezone)
+            # match_dt_obj is a datetime object with timezone as UTC
+
+
+            #CONVERT TO IST
             
+            match_dt_obj = match_dt_obj.astimezone(ist)
             
-          
+           
+            #REPLACE THE DATE AND TIME (in Indian format) FROM THE ORIGINAL 'MATCHES' LIST
+            #ORIGINAL 'MATCHES' LIST WILL GET MODIFIED
+            ist_time = match_list[items]["date"] = match_dt_obj.strftime("%d/%m/%Y")
+            ist_date = match_list[items]["time"] = match_dt_obj.strftime("%H:%M IST")
 
-            # UTC TO IST CONVERSION
-            # IST = UTC + 5 HOURS 30 MINS
+    # return ist_time, ist_date
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+            
+             
+            
 
 
 
