@@ -6,45 +6,35 @@ import requests
 
 def main():
     ## PULL DATA DIRECTLY FROM URL
-    url = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
-    match_data = requests.get(url).json()
-    matches = match_data["matches"]
-    
-    
-
-    # READ DATA FROM LOCAL .JSON FILE
-    # with open('matches.json','r') as f:
-    #     match_data = json.load(f)
-       
-        
+    # url = "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json"
+    # match_data = requests.get(url).json()
     # matches = match_data["matches"]
-
-    print("------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-
     
+                         #     OR      #
+
+    #READ DATA FROM LOCAL .JSON FILE
+    with open('matches.json','r') as f:
+        match_data = json.load(f)    
+    matches = match_data["matches"]
+
+
     #Replaces UTC to IST in dates and time
     convert_to_indian_format(matches)
     
-
     #sorts the matches list, by the using sort_matches as key (which returns a dateime object)
-    matches.sort(key=sort_matches)
-    
-
-
-
+    matches.sort(key=get_match_sort_key)
 
     query = get_query()
-
+   
     user_query_type = query_type(query)
 
     
 
-    
-
+    #CONTROL FLOW LOGIC BASED ON INPUT
     if user_query_type == "FIXTURE":
         search_fixture(query, matches)
     if user_query_type == "DATE":
-       search_match_by_date(query, matches)
+       search_by_date(query, matches)
     if user_query_type == "ROUND":
         search_by_round(query, matches)
     if user_query_type == "SINGLE TEAM":
@@ -53,8 +43,7 @@ def main():
 
 
 
-##FUNCTIONS WHICH IMPLEMENT THE ACTUAL WORKING
-# convert time, date to indian format
+#CONVERT TIME AND DATE FROM UTC ---> IST FORMAT
 def convert_to_indian_format(match_list):
 
     num_of_matches = len(match_list)
@@ -90,8 +79,9 @@ def convert_to_indian_format(match_list):
 
     # return ist_time, ist_date
 
-
-def sort_matches(match):
+#SORTS THE "MATCH" DICTIONARY BASED ON 
+# Match sort key is a datetime object
+def get_match_sort_key(match):
      
     #  for match in matches:
     #     full_ist_date = match["date"]
@@ -108,8 +98,7 @@ def sort_matches(match):
 
     return dt_object
 
-
-
+#HANDLES THE PRESENCE/ABSENCE OF DIFF TYPES OF USER INPUT
 def get_query():
     if len(sys.argv) == 1:   #ONLY sys.argv[0] is there which is always name of the file
         user_inp = input("What do you want to look for? [Team, Fixture, Matches On A Date]  ")
@@ -121,7 +110,8 @@ def get_query():
                 continue
             user_inp += sys.argv[x] + " "
         return user_inp
- 
+
+#CATEGORIZE USER INPUT (QUERY) INTO DIFFERENT KINDS
 def query_type(query):
     query = query.strip()
 
@@ -140,118 +130,136 @@ def query_type(query):
             
     return "SINGLE TEAM"
    
+
+
+
+##MAIN IMPLEMENTAION OF THE SEARCHING
+#SEARCHES BY FIXTUES
 def search_fixture(query, matches):
     query = query.strip()
 
     team_A, team_B = query.split(" vs ")
 
-    print(f"Searching for: '{team_A}' vs '{team_B}'")
+    # print(f"    Searching for: '{team_A}' vs '{team_B}'\n") ----- > makes it look like its taking time to search the entered fixture by user
 
    
 
     for match in matches:
-        if (match['team1'] == team_A or match["team2"] == team_A) and (match["team1"] == team_B or match["team2"] == team_B):
-            print(match)
-            if match.get("score"):
-                print("Match started (LIVE or FINISHED)")
-            else:
-                print("Upcoming match")
+        # if (match['team1'] == team_A or match["team2"] == team_A) and (match["team1"] == team_B or match["team2"] == team_B):
+        if (match['team1'].lower() == team_A.lower() or match["team2"].lower() == team_A.lower()) and (match["team1"].lower() == team_B.lower() or match["team2"].lower() == team_B.lower()):
 
-def search_match_by_date(query, matches):
+            team_one = match['team1']
+            team_two = match["team2"]
+
+            date = match["date"]
+            time = match["time"]
+            
+            #print(match,"\n")     #->PRINTS THE FULL MATCH DICTIONARY CONTAINING THE FIXTURE SEARCHED BY USER
+
+            print(" ╔══════════════════════════════════════════════╗")
+            print("   ⚽", team_one, " vs ", team_two)
+            print("   🏆", match["round"], " | ", match["group"])
+            print("   📅", date, " 🕐 ", time )
+            print("   📍", match["ground"])
+
+            if match.get("score"):
+                print("   🟢 Ongoing or Finsished")
+            else:
+                print("   🔴 Upcoming match")
+            
+            print(" ╚══════════════════════════════════════════════╝")
+
+#SEARCH BY MATCH DATE
+def search_by_date(query, matches):
     date = query
     # convert_to_indian_format(matches)
     date = date.strip()
+    
+
+    print(f"\n   📅 Matches on {date}\n")
 
     for match in matches:
         if match["date"]  == date:
-            print(match,"\n")
-
+            # print(match,"\n")
+            print("   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ")
+            fixture = f"{match['team1']} vs {match['team2']}"
+            print(f"   🕐 {match['time']} | {fixture:<45} {match['group']:<10} {match['round']:<15} {match['ground']}")
+    print("   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ")
+           
+#SEARCH ALL THE MATCHES IN A PARTICULAR ROUND
 def search_by_round(query, matches):
-    stage = query.strip()
+    round = query.strip()
+    print("  🏆 ", round.title())
 
     for match in matches:
-        if match['round'].lower() == stage.lower():
-            print(match,"\n")
-    
 
+        if match['round'].lower() == round.lower() or round.lower() in match["round"].lower():
+            # print(match,"\n")
+            date = match["date"]
+            time = match["time"]
+            round = match["round"]
+            team_one = match["team1"]
+            team_two = match["team2"]
+            
 
+            fixture = f"{team_one} vs {team_two}"
+
+            print(" ───────────────────────────────────────────────────────────────")
+            print(f"  📅  {date:<12} 🕐 {time:<20} |  {fixture:<45} ")
+    print(" ───────────────────────────────────────────────────────────────")
+            
+#SEARCHES ALL MATCHES OF A PARTICULAR TEAM
 def search_team_matches(query, matches):
     team = query.strip()
+
+    print(f"{'🏆':>3}", team.title(), "Fixtures")
+
     for match in matches:
         if not match.get("team1") and not match.get("team2"):
             continue
-        if match['team1'] == team or match['team2'] == team:
-            print(match,"\n")
+    
+        if match['team1'].lower() == team.lower() or match['team2'].lower() == team.lower():
+            # print(match,"\n")
+            date = match["date"]
+            time = match["time"]
+
+            team_one = match["team1"]
+            team_two = match["team2"]
+            fixture = f"{team_one} vs {team_two}"
+
+            round = match["round"]
+            ground = match["ground"]
+
+            print(" ──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+            # print("  📅 ", date, "  🕐 ", time, " | ", f"{fixture:<20}", round, ground)
+            print(f"  📅 {date:<12} 🕐 {time:<10} | {fixture:<45} {round:<12} {ground}")
+    print(" ──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
 
 
 
-
-
-
-                    
 if __name__ == "__main__":
     main()
 
 
+##TODO A DATA STRUCTURE OF FLAGS OF EACH COUNTRY, TO DISPLAY ALONGSIDE MATCH DATA
 
 
+##TODO
+# Potential future commands:
 
-
-# TODO
-# input = sys.argv[1]
-
-# if "vs" in input:
-#     search teams
+#python match.py Argentina vs France 11/11/1111 semi
+# python matches.py today          ????        | ---> Both these would require time calcs ??
+# python matches.py next           ????        |
+# python matches.py "group a"   ---> def get_match_by_round(round, matches) | -----|
+#---------------------------------------------------------------------------]      |
+# TODO                                                                             |
+# input = sys.argv[1]                                                              |   
+#                                                                                  | 
+# if "vs" in input:                       < ---------------------------------------|
 
 # elif looks_like_date(input):
 #     search date
 
 # elif round_exists(input):
 #     search round
-
-
-
-
-
-#TODO - CLI IMPLEMENTATION 
-##Implement option to find matches of a particular team using command line
-
-
-#TODO
-# Desired usage:
-
-# python matches.py "Argentina"
-
-# python matches.py "Argentina vs France"
-
-# python matches.py "26/06/2026"
-
-# python matches.py "round of 16"
-
-# python matches.py "semi-final"
-
-
-
-
-
-# Potential future commands:
-
-#python match.py Argentina vs France 11/11/1111 semi
-
-# python matches.py argentina
-
-# python matches.py france
-
-# python matches.py today          ????
-
-# python matches.py next           ????
-
-# python matches.py "group a"
-
-
-
-
-
-
-
 
