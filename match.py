@@ -45,36 +45,15 @@ def main():
         search_fixture(query, matches)
     if user_query_type == "DATE":
        search_match_by_date(query, matches)
-    # if user_query_type == "ROUND":
-        #search_by_round(query):
-    # if user_query_type == "SINGLE TEAM":
-    #      #search_Team_matches(query)
-
-
-    
- 
+    if user_query_type == "ROUND":
+        search_by_round(query, matches)
+    if user_query_type == "SINGLE TEAM":
+        search_team_matches(query, matches)
 
 
 
 
-    # try:
-    #     fixture = sys.argv[1]
-    #     team_a, team_b =fixture.split(" vs ")
-    # except:
-    #     team = input("Which team? ")
-
-    # for match in matches:
-    #     if team == match["team1"] or team == match["team2"]:
-    #          print("Target found")
-    #          print(match)
-   
-    # sorted_by_DateTime = sorted(matches, key=sort_matches)
-    # print(sorted_by_DateTime)
-    
-
-
-
-
+##FUNCTIONS WHICH IMPLEMENT THE ACTUAL WORKING
 # convert time, date to indian format
 def convert_to_indian_format(match_list):
 
@@ -112,7 +91,6 @@ def convert_to_indian_format(match_list):
     # return ist_time, ist_date
 
 
-
 def sort_matches(match):
      
     #  for match in matches:
@@ -143,12 +121,12 @@ def get_query():
                 continue
             user_inp += sys.argv[x] + " "
         return user_inp
-
-        
+ 
 def query_type(query):
     query = query.strip()
 
     stages = ["Matchday", "Round of 16", "Round of 32", "Quarter-final", "Semi-final", "Final"]
+    # available_rounds = set(match["round"])
     
     if "vs" in query:
         return "FIXTURE"
@@ -161,9 +139,7 @@ def query_type(query):
                 return "ROUND"
             
     return "SINGLE TEAM"
-    
-    
-    
+   
 def search_fixture(query, matches):
     query = query.strip()
 
@@ -181,7 +157,6 @@ def search_fixture(query, matches):
             else:
                 print("Upcoming match")
 
-
 def search_match_by_date(query, matches):
     date = query
     # convert_to_indian_format(matches)
@@ -191,13 +166,28 @@ def search_match_by_date(query, matches):
         if match["date"]  == date:
             print(match,"\n")
 
+def search_by_round(query, matches):
+    stage = query.strip()
 
-
+    for match in matches:
+        if match['round'].lower() == stage.lower():
+            print(match,"\n")
     
-        
-          
 
-     
+
+def search_team_matches(query, matches):
+    team = query.strip()
+    for match in matches:
+        if not match.get("team1") and not match.get("team2"):
+            continue
+        if match['team1'] == team or match['team2'] == team:
+            print(match,"\n")
+
+
+
+
+
+
                     
 if __name__ == "__main__":
     main()
